@@ -229,7 +229,11 @@ var IFC = {
 
   // ArrayBuffer to String
   _ab2str: function(buf) {
-    return String.fromCharCode.apply(null, new Uint8Array(buf));
+    var dataString = String.fromCharCode.apply(null, new Uint8Array(buf));
+    var regex = /{[\S\s]*}$/g;
+    var jsonStart = dataString.search(regex);
+    var resultString = dataString.slice(jsonStart,dataString.length);
+    return resultString;
   },
 
 

@@ -1,7 +1,6 @@
 var dgram = require('dgram');
 var net = require('net');
 
-
 var IFC = {
 
   host: null,
@@ -31,7 +30,7 @@ var IFC = {
       }
     }
   },
-  
+
   infiniteFlight: {
     broadcastPort: 15000,
     serverPort: 0,

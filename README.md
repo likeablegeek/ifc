@@ -5,13 +5,15 @@ A Javascript client for Infinite Flight simulator API
 
 Infinite Flight Connect is an built-in API that allows you to send command to Infinite Flight. You must enable it in Infinite Flight Settings > General > "Enable Infinite Flight Connect".
 
-### Initialization 
+This version is forked from the version originally created by NicolasBD (https://github.com/nicolasbd/ifc) and subsequently forked and updated by Velocity23 (https://github.com/Velocity23/ifc).
+
+### Initialization
 `init(successCallback, errorCallback)`
 
 * `successCallback` is the function to be executed after the connection has been established with Infinite Flight
 * `errorCallback` is the function to be executed in case of Error
 
-Example : 
+Example :
 
 ```
 IFC.init(
@@ -34,16 +36,14 @@ Examples :
 * Camera Move : this one require params, so let's call the full command call : ` "Command": "NetworkJoystick.SetPOVState", "Parameters": [ { "Name": "X", "Value": 0 }, { "Name": "Y", "Value": 0 } ] }`
 
 
-### Connection to ForeFlight Link API 
+### Connection to ForeFlight Link API
 
 Fore Flight Link broadcasts various data about the player's plane and traffic planes around him. ForeFlight Link must be enabled from Infinite Flight Settings > General > Enable ForeFlight Link
 
-You can use IFC to listen to ForeFlight Link messages : 
+You can use IFC to listen to ForeFlight Link messages :
 
 `initForeFlight(onForeFlightDataReceived)`
 
 (TODO: example to come ...)
 
 Received Data is formatted according to the official documentation : https://www.foreflight.com/support/network-gps/
-
-

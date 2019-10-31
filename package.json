@@ -17,6 +17,9 @@
     "simulator",
     "client"
   ],
+  "dependencies": {
+    "is-ip": "^3.1.0"
+  },
   "author": "Arman Danesh",
   "license": "Apache 2",
   "bugs": {

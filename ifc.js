@@ -1,3 +1,4 @@
+var isIp = require('is-ip');
 var dgram = require('dgram');
 var net = require('net');
 
@@ -127,9 +128,15 @@ var IFC = {
         IFC.log("Host Discovered");
         IFC.isConnected = true;
         IFC.infiniteFlight.serverAddress = data.Addresses[0];
+        IFC.infiniteFlight.serverAddress = "";
+  			for (var i = 0; i < data.Addresses.length; i++) { // Find an IP v4 address
+  					if (isIp.v4(data.Addresses[i])) {
+  							IFC.infiniteFlight.serverAddress = data.Addresses[i];
+  					}
+  			}
         IFC.infiniteFlight.serverPort = data.Port;
 
-        IFC.initIFClient(data.Addresses[0], data.Port);
+        IFC.initIFClient(IFC.infiniteFlight.serverAddress, IFC.infiniteFlight.serverPort);
 
         IFC.infiniteFlight.discoverSocket.close(function() {
           IFC.infiniteFlight.discoverSocket = false;

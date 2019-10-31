@@ -1,14 +1,14 @@
 {
   "name": "ifc",
-  "version": "1.1.1",
-  "description": "A Javascript client for Infinite Flight simulator API",
+  "version": "1.1.2",
+  "description": "A Javascript client for Infinite Flight simulator API - forked",
   "main": "ifc.js",
   "scripts": {
     "test": "node tests/connection.js"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/nicolasbd/ifc.git"
+    "url": "https://github.com/likeablegeek/ifc"
   },
   "keywords": [
     "api",
@@ -17,10 +17,10 @@
     "simulator",
     "client"
   ],
-  "author": "Nicolas BARTHE-DEJEAN",
+  "author": "Arman Danesh",
   "license": "Apache 2",
   "bugs": {
-    "url": "https://github.com/nicolasbd/ifc/issues"
+    "url": "https://github.com/likeablegeek/ifc/issues"
   },
-  "homepage": "https://github.com/nicolasbd/ifc"
+  "homepage": "https://github.com/likeablegeek/ifc"
 }

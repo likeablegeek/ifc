@@ -1,6 +1,7 @@
 var isIp = require('is-ip');
 var dgram = require('dgram');
 var net = require('net');
+var events = require('events');
 
 var IFC = {
 
@@ -9,7 +10,18 @@ var IFC = {
   enableLog: false,
   name: "IF Connect",
   isConnected: false,
-  aircraftState: "",
+  eventEmitter: new events.EventEmitter(),
+  ifData: {
+    "Fds.IFAPI.APIAircraftState": "",
+    "Fds.IFAPI.APIEngineStates": "",
+    "Fds.IFAPI.APIFuelTankStates": "",
+    "Fds.IFAPI.APIAircraftInfo": "",
+    "Fds.IFAPI.APILightsState": "",
+    "Fds.IFAPI.APIAutopilotState": "",
+    "Fds.IFAPI.IFAPIStatus": "",
+    "Fds.IFAPI.APINearestAirportsResponse": "",
+    "Fds.IFAPI.APIFlightPlan": ""
+  },
 
   foreFlight: {
     socket: false,
@@ -51,7 +63,11 @@ var IFC = {
   onSocketConnected: function() { IFC.log("Connected"); },
   onSocketConnectionError: function() { IFC.log("Connection error"); },
   onHostDiscovered: function(host, port, callback) { IFC.log("Host Discovered"); },
-  onDataReceived: function(data) { IFC.aircraftState = data; },
+  onDataReceived: function(data) {
+    IFC.ifData[data.Type] = data;
+    IFC.eventEmitter.emit('IFCdata',data);
+    console.log("Emitting IFCdata for " + data.Type);
+  },
   onHostSearchFailed: function() {},
 
   // SHORTCUTS FUNCTIONS //

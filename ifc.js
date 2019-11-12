@@ -1,17 +1,17 @@
-var isIp = require('is-ip');
-var dgram = require('dgram');
-var net = require('net');
-var events = require('events');
+var isIp = require('is-ip'); // Used to test if broadcast IP addresses are IPv6 vs IPv4
+var dgram = require('dgram'); // For listening for UDP broadcasts
+var net = require('net'); // For establishing socket connections
+var events = require('events'); // For emitting events back to calling scripts
 
 var IFC = {
 
-  host: null,
-  port: null,
-  enableLog: false,
-  name: "IF Connect",
-  isConnected: false,
-  eventEmitter: new events.EventEmitter(),
-  ifData: {
+  host: null, // Client host address
+  port: null, // Client host port
+  enableLog: false, // Control logging
+  name: "IF Connect", // Module name
+  isConnected: false, // Are we connected to IF?
+  eventEmitter: new events.EventEmitter(), // Event emitter
+  ifData: { // Object to hold data returned by information API calls
     "Fds.IFAPI.APIAircraftState": "",
     "Fds.IFAPI.APIEngineStates": "",
     "Fds.IFAPI.APIFuelTankStates": "",
@@ -23,7 +23,7 @@ var IFC = {
     "Fds.IFAPI.APIFlightPlan": ""
   },
 
-  foreFlight: {
+  foreFlight: { // ForFlight data
     socket: false,
     broadcastPort: 49002,
     dataModels: {
@@ -45,9 +45,9 @@ var IFC = {
     }
   },
 
-  infiniteFlight: {
-    broadcastPort: 15000,
-    serverPort: 0,
+  infiniteFlight: { // Infinite Flight connection data
+    broadcastPort: 15000, // Port to listen for broadcast from Infinite Flight
+    serverPort: 0, // Port for socket connection to Infinite Flight
     discoverSocket: false,
     clientSocket: false
   },
@@ -55,36 +55,36 @@ var IFC = {
   initSocketOnHostDiscovered: true,
   closeUDPSocketOnHostDiscovered: true,
 
-  log: function(msg) { if (IFC.enableLog) console.log(IFC.name, msg); },
+  log: function(msg) { if (IFC.enableLog) console.log(IFC.name, msg); }, // generic logging function
 
-  beforeInitSocket: function() { IFC.log("Connecting..."); },
-  onHostUndefined: function() { IFC.log("Host Undefined"); },
-  onHostSearchStarted: function() { IFC.log("Searching for host"); },
-  onSocketConnected: function() { IFC.log("Connected"); },
-  onSocketConnectionError: function() { IFC.log("Connection error"); },
-  onHostDiscovered: function(host, port, callback) { IFC.log("Host Discovered"); },
-  onDataReceived: function(data) {
-    IFC.ifData[data.Type] = data;
-    IFC.eventEmitter.emit('IFCdata',data);
-    console.log("Emitting IFCdata for " + data.Type);
+  beforeInitSocket: function() { IFC.log("Connecting..."); }, // What to do before connecting to sockit
+  onHostUndefined: function() { IFC.log("Host Undefined"); }, // What to do if host is undefined
+  onHostSearchStarted: function() { IFC.log("Searching for host"); }, // What to do when starting search for host
+  onSocketConnected: function() { IFC.log("Connected"); }, // What to do when connected
+  onSocketConnectionError: function() { IFC.log("Connection error"); }, // What to do on a connection error
+  onHostDiscovered: function(host, port, callback) { IFC.log("Host Discovered"); }, // What to do when host discovered
+  onDataReceived: function(data) { // What to do when receiving data back from API
+    if (data.Type) { IFC.ifData[data.Type] = data; } // Store structured data results in ifData objects
+    IFC.eventEmitter.emit('IFCdata',data); // Return data to calling script through an event
+    IFC.log("Emitting IFCdata for " + data.Type);
   },
-  onHostSearchFailed: function() {},
+  onHostSearchFailed: function() {}, // What to do if search failed
 
   // SHORTCUTS FUNCTIONS //
-  init: function(successCallback, errorCallback) {
+  init: function(successCallback, errorCallback) { // Initialise module
     if (successCallback) IFC.onSocketConnected = successCallback;
     if (errorCallback) IFC.onSocketConnectionError = errorCallback;
-    IFC.searchHost(successCallback, errorCallback);
+    IFC.searchHost(successCallback, errorCallback); // Search for Infinite Flight host
   },
 
-  initForeFlight: function(onForeFlightDataReceived) {
+  initForeFlight: function(onForeFlightDataReceived) { // Initialise ForeFlight
     IFC.initForeFlightReceiver(onForeFlightDataReceived);
   },
 
   // FORE FLIGHT //
-  onForeFlightDataReceived: function(data) { IFC.log(data); },
+  onForeFlightDataReceived: function(data) { IFC.log(data); }, // Handle ForeFlight data return
 
-  initForeFlightReceiver: function(onForeFlightDataReceived) {
+  initForeFlightReceiver: function(onForeFlightDataReceived) { // ForeFlight data receiver
 
     if (onForeFlightDataReceived) IFC.onForeFlightDataReceived = onForeFlightDataReceived;
     if (IFC.foreFlight.socket) IFC.foreFlight.socket.close(function() {
@@ -115,7 +115,7 @@ var IFC = {
       //IFC.log(log.join(' '));
     });
 
-    IFC.foreFlight.socket.on('listening', function() {
+    IFC.foreFlight.socket.on('listening', function() { // Creatting Foreflight socket for listening
       var address = IFC.foreFlight.socket.address();
       IFC.log("listening on :", address.address, ":" , address.port);
     });
@@ -123,7 +123,7 @@ var IFC = {
     IFC.foreFlight.socket.bind(IFC.foreFlight.broadcastPort);
   },
 
-  searchHost: function(successCallback, errorCallback) {
+  searchHost: function(successCallback, errorCallback) { // Search for an Infinite Flight host
     if (IFC.infiniteFlight.discoverSocket) return;
 
     IFC.infiniteFlight.discoverSocket = dgram.createSocket('udp4');
@@ -171,7 +171,7 @@ var IFC = {
 
   },
 
-  initIFClient: function(host, port) {
+  initIFClient: function(host, port) { // Initiaise the module
     IFC.log('initializing socket');
 
     if (IFC.infiniteFlight.clientSocket) IFC.infiniteFlight.clientSocket.close();
@@ -200,19 +200,19 @@ var IFC = {
 
   },
 
-  cmd: function(cmd) {
+  cmd: function(cmd) { // Send a command to IF API -- short form
     IFC.sendCommand({
       "Command": "Commands." + cmd,
       "Parameters": []
     })
   },
 
-  getAirplaneState: function(onDataReceived) {
+  getAirplaneState: function(onDataReceived) { // Get airplane state -- redundant?
     if (onDataReceived) IFC.onDataReceived = onDataReceived;
     IFC.sendCommand({ "Command": "Airplane.GetState", "Parameters": []});
   },
 
-  sendCommand: function(cmd) {
+  sendCommand: function(cmd) { // Send a command to IF API
 
     try {
       var jsonStr = JSON.stringify(cmd);

@@ -7,10 +7,15 @@ var IFC = {
 
   host: null, // Client host address
   port: null, // Client host port
-  enableLog: false, // Control logging
+
+  enableLog: true, // Control logging
+
   name: "IF Connect", // Module name
+
   isConnected: false, // Are we connected to IF?
+
   eventEmitter: new events.EventEmitter(), // Event emitter
+
   ifData: { // Object to hold data returned by information API calls
     "Fds.IFAPI.APIAircraftState": "",
     "Fds.IFAPI.APIEngineStates": "",
@@ -58,16 +63,23 @@ var IFC = {
   log: function(msg) { if (IFC.enableLog) console.log(IFC.name, msg); }, // generic logging function
 
   beforeInitSocket: function() { IFC.log("Connecting..."); }, // What to do before connecting to sockit
+
   onHostUndefined: function() { IFC.log("Host Undefined"); }, // What to do if host is undefined
+
   onHostSearchStarted: function() { IFC.log("Searching for host"); }, // What to do when starting search for host
+
   onSocketConnected: function() { IFC.log("Connected"); }, // What to do when connected
+
   onSocketConnectionError: function() { IFC.log("Connection error"); }, // What to do on a connection error
+
   onHostDiscovered: function(host, port, callback) { IFC.log("Host Discovered"); }, // What to do when host discovered
+
   onDataReceived: function(data) { // What to do when receiving data back from API
     if (data.Type) { IFC.ifData[data.Type] = data; } // Store structured data results in ifData objects
     IFC.eventEmitter.emit('IFCdata',data); // Return data to calling script through an event
     IFC.log("Emitting IFCdata for " + data.Type);
   },
+
   onHostSearchFailed: function() {}, // What to do if search failed
 
   // SHORTCUTS FUNCTIONS //
@@ -204,7 +216,7 @@ var IFC = {
     IFC.sendCommand({
       "Command": "Commands." + cmd,
       "Parameters": []
-    })
+    });
   },
 
   getAirplaneState: function(onDataReceived) { // Get airplane state -- redundant?
@@ -226,8 +238,13 @@ var IFC = {
       var buffer = Buffer.from(data);
       IFC.infiniteFlight.clientSocket.write(buffer);
 
+      IFC.eventEmitter.emit('IFCCommandSent',cmd); // Return data to calling script through an event
+      IFC.log("Emitting IFCCommandSent for " + cmd);
+
     } catch(e) {
-        IFC.log(e);
+      IFC.log(e);
+      IFC.eventEmitter.emit('IFCCommandError',cmd); // Return data to calling script through an event
+      IFC.log("Emitting IFCommandError for " + cmd);
     }
   },
 
@@ -251,8 +268,6 @@ var IFC = {
     var resultString = dataString.slice(jsonStart,dataString.length);
     return resultString;
   },
-
-
 
 };
 

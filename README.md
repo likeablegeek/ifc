@@ -158,3 +158,17 @@ You can use `ifc` to listen to ForeFlight Link messages :
 (TODO: example to come ...)
 
 Received Data is formatted according to the official documentation : https://www.foreflight.com/support/network-gps/
+
+
+## Copyright and License
+
+This version of `ifc` is a fork and derivative version of two previous versions:
+
+- Original version by @nicolasbd (https://github.com/nicolasbd/ifc)
+- Initial fork by @Velocity23 (https://github.com/Velocity23/ifc)
+
+Both previous versions were released under the Apache 2.0 license (http://www.apache.org/licenses/LICENSE-2.0) as is this version.
+
+This version is Copyright 2019, Arman Danesh with components from previous versions copyright by the two authors noted above.
+
+You may not use this work/module/file except in compliance with the License. Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.

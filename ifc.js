@@ -1,3 +1,29 @@
+/*
+
+ifc: A Node JS module providing a client the Infinite Flight Connect API.
+
+Version: 0.1
+Author: @likeablegeek
+
+This version is based on previous versions by @nicolasbd and @Velocity23 and
+and contains portions of their work.
+
+Copyright 2019.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+*/
+
 var isIp = require('is-ip'); // Used to test if broadcast IP addresses are IPv6 vs IPv4
 var dgram = require('dgram'); // For listening for UDP broadcasts
 var net = require('net'); // For establishing socket connections

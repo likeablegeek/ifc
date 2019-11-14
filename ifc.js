@@ -2,7 +2,7 @@
 
 ifc: A Node JS module providing a client the Infinite Flight Connect API.
 
-Version: 0.1
+Version: 1.1.2
 Author: @likeablegeek
 
 This version is based on previous versions by @nicolasbd and @Velocity23 and

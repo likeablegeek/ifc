@@ -8,7 +8,7 @@ var IFC = {
   host: null, // Client host address
   port: null, // Client host port
 
-  enableLog: true, // Control logging
+  enableLog: false, // Control logging
 
   name: "IF Connect", // Module name
 
@@ -26,6 +26,30 @@ var IFC = {
     "Fds.IFAPI.IFAPIStatus": "",
     "Fds.IFAPI.APINearestAirportsResponse": "",
     "Fds.IFAPI.APIFlightPlan": ""
+  },
+
+  ifDataCommands: { // Commands for retrieving each data type
+    "Fds.IFAPI.APIAircraftState": "airplane.getstate",
+    "Fds.IFAPI.APIEngineStates": "airplane.getenginesstate",
+    "Fds.IFAPI.APIFuelTankStates": "airplane.getfuelstate",
+    "Fds.IFAPI.APIAircraftInfo": "airplane.getinfo",
+    "Fds.IFAPI.APILightsState": "airplane.getlightsstate",
+    "Fds.IFAPI.APIAutopilotState": "autopilot.getstate",
+    "Fds.IFAPI.IFAPIStatus": "infiniteflight.getstatus",
+    "Fds.IFAPI.APINearestAirportsResponse": "infiniteflight.getnearestairports",
+    "Fds.IFAPI.APIFlightPlan": "flightplan.get"
+  },
+
+  pollTimeouts: { // Timeouts for polling for each info type
+    "Fds.IFAPI.APIAircraftState": 0,
+    "Fds.IFAPI.APIEngineStates": 0,
+    "Fds.IFAPI.APIFuelTankStates": 0,
+    "Fds.IFAPI.APIAircraftInfo": 0,
+    "Fds.IFAPI.APILightsState": 0,
+    "Fds.IFAPI.APIAutopilotState": 0,
+    "Fds.IFAPI.IFAPIStatus": 0,
+    "Fds.IFAPI.APINearestAirportsResponse": 0,
+    "Fds.IFAPI.APIFlightPlan": 0
   },
 
   foreFlight: { // ForFlight data
@@ -68,24 +92,38 @@ var IFC = {
 
   onHostSearchStarted: function() { IFC.log("Searching for host"); }, // What to do when starting search for host
 
-  onSocketConnected: function() { IFC.log("Connected"); }, // What to do when connected
+  onSocketConnected: function() { // What to do when connected
+    IFC.log("Connected");
+  },
 
   onSocketConnectionError: function() { IFC.log("Connection error"); }, // What to do on a connection error
 
   onHostDiscovered: function(host, port, callback) { IFC.log("Host Discovered"); }, // What to do when host discovered
 
   onDataReceived: function(data) { // What to do when receiving data back from API
-    if (data.Type) { IFC.ifData[data.Type] = data; } // Store structured data results in ifData objects
+    if (data.Type) { // Store structured data results in ifData objects
+      IFC.log("Storing " + data.Type);
+      IFC.ifData[data.Type] = data;
+    }
     IFC.eventEmitter.emit('IFCdata',data); // Return data to calling script through an event
-    IFC.log("Emitting IFCdata for " + data.Type);
+    if (IFC.pollTimeouts[data.Type] > 0) {  // Set timeout to refetch dataif timeout has been defined
+      setTimeout(
+        () => IFC.sendCommand({
+          "Command": IFC.ifDataCommands[data.Type],
+          "Parameters": []
+        }),
+        IFC.pollTimeouts[data.Type]
+      );
+    }
   },
 
   onHostSearchFailed: function() {}, // What to do if search failed
 
   // SHORTCUTS FUNCTIONS //
-  init: function(successCallback, errorCallback) { // Initialise module
-    if (successCallback) IFC.onSocketConnected = successCallback;
-    if (errorCallback) IFC.onSocketConnectionError = errorCallback;
+  init: function(successCallback, errorCallback, timeouts) { // Initialise module
+    if (successCallback) IFC.onSocketConnected = successCallback; // Set success callback function
+    if (errorCallback) IFC.onSocketConnectionError = errorCallback; // Set error callback function
+    if (timeouts) IFC.setPollTimeouts(timeouts); // Set poll timeouts
     IFC.searchHost(successCallback, errorCallback); // Search for Infinite Flight host
   },
 
@@ -154,7 +192,7 @@ var IFC = {
 
       if (data.Addresses && data.Port) {
         IFC.log("Host Discovered");
-        IFC.isConnected = true;
+//        IFC.isConnected = true;
         IFC.infiniteFlight.serverAddress = data.Addresses[0];
         IFC.infiniteFlight.serverAddress = "";
   			for (var i = 0; i < data.Addresses.length; i++) { // Find an IP v4 address
@@ -194,6 +232,8 @@ var IFC = {
     IFC.infiniteFlight.clientSocket = new net.Socket();
     IFC.infiniteFlight.clientSocket.connect(port, host, function() {
     	IFC.log('Connected to IF server');
+      IFC.isConnected = true;
+      IFC.startPollTimeouts();
       IFC.onSocketConnected();
     });
 
@@ -248,6 +288,25 @@ var IFC = {
     }
   },
 
+  setPollTimeouts: function(timeouts) { // Set poll timeouts
+    for (key in timeouts) {
+      IFC.pollTimeouts[key] = timeouts[key];
+      IFC.log("Setting timeout for " + key + ": " + timeouts[key]);
+    }
+    if (IFC.isConnected) { IFC.startPollTimeouts; }
+  },
+
+  startPollTimeouts: function() { // Start polling
+    for (key in IFC.pollTimeouts) {
+      if (IFC.pollTimeouts[key] > 0) {
+        IFC.log("Starting polling for " + key)
+        IFC.sendCommand({
+          "Command": IFC.ifDataCommands[key],
+          "Parameters": []
+        });
+      }
+    }
+  },
 
   // Converters from https://developer.chrome.com/trunk/apps/app_hardware.html
   // String to ArrayBuffer

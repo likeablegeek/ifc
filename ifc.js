@@ -56,7 +56,10 @@ var IFC = {
     "Fds.IFAPI.APIAutopilotState": "",
     "Fds.IFAPI.IFAPIStatus": "",
     "Fds.IFAPI.APINearestAirportsResponse": "",
-    "Fds.IFAPI.APIFlightPlan": ""
+    "Fds.IFAPI.APIFlightPlan": "",
+    "Fds.IFAPI.LiveAirplaneList": "",
+    "Fds.IFAPI.FacilityList": "",
+    "Fds.IFAPI.APIFrequencyInfoList": ""
   },
 
   intervalCommands: { // Commands for retrieving each data type
@@ -104,10 +107,10 @@ var IFC = {
       IFC.activeIntervals["Fds.IFAPI.APILightsState"] = setInterval(
         () => {
           IFC.sendCommand({
-            "Command": "airplane.getinfo",
+            "Command": "airplane.getlightsstate",
             "Parameters": []
           });
-          IFC.log("Interval called Fds.IFAPI.APIAircraftInfo [airplane.getinfo]",ERROR);
+          IFC.log("Interval called Fds.IFAPI.APILightsState [airplane.getlightsstate]",ERROR);
         },interval);
       },
     "Fds.IFAPI.APIAutopilotState": function(interval) {
@@ -149,6 +152,36 @@ var IFC = {
           });
           IFC.log("Interval called Fds.IFAPI.APIFlightPlan [flightplan.get]",ERROR);
         },interval);
+      },
+    "Fds.IFAPI.LiveAirplaneList": function(interval) {
+      IFC.activeIntervals["Fds.IFAPI.LiveAirplaneList"] = setInterval(
+        () => {
+          IFC.sendCommand({
+            "Command": "live.gettraffic",
+            "Parameters": []
+          });
+          IFC.log("Interval called Fds.IFAPI.LiveAirplaneList [live.gettraffic]",ERROR);
+        },interval);
+      },
+    "Fds.IFAPI.FacilityList": function(interval) {
+      IFC.activeIntervals["Fds.IFAPI.FacilityList"] = setInterval(
+        () => {
+          IFC.sendCommand({
+            "Command": "live.atcfacilities",
+            "Parameters": []
+          });
+          IFC.log("Interval called Fds.IFAPI.FacilityList [live.atcfacilities]",ERROR);
+        },interval);
+      },
+    "Fds.IFAPI.APIFrequencyInfoList": function(interval) {
+      IFC.activeIntervals["Fds.IFAPI.APIFrequencyInfoList"] = setInterval(
+        () => {
+          IFC.sendCommand({
+            "Command": "live.getcurrentcomfrequencies",
+            "Parameters": []
+          });
+          IFC.log("Interval called Fds.IFAPI.APIFrequencyInfoList [live.getcurrentcomfrequencies]",ERROR);
+        },interval);
       }
   },
 
@@ -161,7 +194,10 @@ var IFC = {
     "Fds.IFAPI.APIAutopilotState": 0,
     "Fds.IFAPI.IFAPIStatus": 0,
     "Fds.IFAPI.APINearestAirportsResponse": 0,
-    "Fds.IFAPI.APIFlightPlan": 0
+    "Fds.IFAPI.APIFlightPlan": 0,
+    "Fds.IFAPI.LiveAirplaneList": 0,
+    "Fds.IFAPI.FacilityList": 0,
+    "Fds.IFAPI.APIFrequencyInfoList": 0
   },
 
   activeIntervals: { // Active intervals for polling for each info type
@@ -226,7 +262,7 @@ var IFC = {
         var data = results[i];
         if (data.Type) { // Store structured data results in ifData objects
           IFC.log("Storing " + data.Type, ERROR);
-          IFC.log("Data: " + JSON.stringify(data), INFO)
+          IFC.log("Data: " + JSON.stringify(data), INFO);
           IFC.ifData[data.Type] = data;
         }
         IFC.eventEmitter.emit('IFCdata',data); // Return data to calling script through an event
@@ -357,7 +393,7 @@ var IFC = {
 
     IFC.infiniteFlight.clientSocket = new net.Socket();
     IFC.infiniteFlight.clientSocket.connect(port, host, function() {
-    	IFC.log('Connected to IF server', ERROR);
+    	IFC.log('Connected to IF server ' + host, ERROR);
       IFC.isConnected = true;
       IFC.startPollingIntervals();
       IFC.onSocketConnected();
@@ -481,7 +517,10 @@ var IFC = {
       var dataString = dataString.replace(regex, "},{")
       regex = /^[^{]*({[\S\s]*})[^}]*$/;
       dataString = dataString.replace(regex, "$1");
-      var resultString = "[" + dataString + "]"
+      regex = /:NaN/g;
+      dataString = dataString.replace(regex, ":\"NaN\"");
+      var resultString = "[" + dataString + "]";
+      IFC.log("resultString: " + resultString,INFO);
       return JSON.parse(resultString);
   }
 

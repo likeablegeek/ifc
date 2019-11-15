@@ -29,12 +29,17 @@ var dgram = require('dgram'); // For listening for UDP broadcasts
 var net = require('net'); // For establishing socket connections
 var events = require('events'); // For emitting events back to calling scripts
 
+const INFO = 2;
+const WARN = 1;
+const ERROR = 0;
+
 var IFC = {
 
   host: null, // Client host address
   port: null, // Client host port
 
-  enableLog: false, // Control logging
+  enableLog: true, // Control logging
+  logLevel: ERROR,
 
   name: "IF Connect", // Module name
 
@@ -54,19 +59,100 @@ var IFC = {
     "Fds.IFAPI.APIFlightPlan": ""
   },
 
-  ifDataCommands: { // Commands for retrieving each data type
-    "Fds.IFAPI.APIAircraftState": "airplane.getstate",
-    "Fds.IFAPI.APIEngineStates": "airplane.getenginesstate",
-    "Fds.IFAPI.APIFuelTankStates": "airplane.getfuelstate",
-    "Fds.IFAPI.APIAircraftInfo": "airplane.getinfo",
-    "Fds.IFAPI.APILightsState": "airplane.getlightsstate",
-    "Fds.IFAPI.APIAutopilotState": "autopilot.getstate",
-    "Fds.IFAPI.IFAPIStatus": "infiniteflight.getstatus",
-    "Fds.IFAPI.APINearestAirportsResponse": "infiniteflight.getnearestairports",
-    "Fds.IFAPI.APIFlightPlan": "flightplan.get"
+  intervalCommands: { // Commands for retrieving each data type
+    "Fds.IFAPI.APIAircraftState": function(interval) {
+      IFC.activeIntervals["Fds.IFAPI.APIAircraftState"] = setInterval(
+        () => {
+          IFC.sendCommand({
+            "Command": "airplane.getstate",
+            "Parameters": []
+          });
+          IFC.log("Interval called Fds.IFAPI.APIAircraftState [airplane.getstate]",ERROR);
+        },interval);
+      },
+    "Fds.IFAPI.APIEngineStates": function(interval) {
+      IFC.activeIntervals["Fds.IFAPI.APIEngineStates"] = setInterval(
+        () => {
+          IFC.sendCommand({
+            "Command": "airplane.getenginesstate",
+            "Parameters": []
+          });
+          IFC.log("Interval called Fds.IFAPI.APIEngineStates [airplane.getenginesstate]",ERROR);
+        },interval);
+      },
+    "Fds.IFAPI.APIFuelTankStates": function(interval) {
+      IFC.activeIntervals["Fds.IFAPI.APIFuelTankStates"] = setInterval(
+        () => {
+          IFC.sendCommand({
+            "Command": "airplane.getfuelstate",
+            "Parameters": []
+          });
+          IFC.log("Interval called Fds.IFAPI.APIFuelTankStates [airplane.getfuelstate]",ERROR);
+        },interval);
+      },
+    "Fds.IFAPI.APIAircraftInfo": function(interval) {
+      IFC.activeIntervals["Fds.IFAPI.APIAircraftInfo"] = setInterval(
+        () => {
+          IFC.sendCommand({
+            "Command": "airplane.getinfo",
+            "Parameters": []
+          });
+          IFC.log("Interval called Fds.IFAPI.APIAircraftInfo [airplane.getinfo]",ERROR);
+        },interval);
+      },
+    "Fds.IFAPI.APILightsState": function(interval) {
+      IFC.activeIntervals["Fds.IFAPI.APILightsState"] = setInterval(
+        () => {
+          IFC.sendCommand({
+            "Command": "airplane.getinfo",
+            "Parameters": []
+          });
+          IFC.log("Interval called Fds.IFAPI.APIAircraftInfo [airplane.getinfo]",ERROR);
+        },interval);
+      },
+    "Fds.IFAPI.APIAutopilotState": function(interval) {
+      IFC.activeIntervals["Fds.IFAPI.APIAutopilotState"] = setInterval(
+        () => {
+          IFC.sendCommand({
+            "Command": "autopilot.getstate",
+            "Parameters": []
+          });
+          IFC.log("Interval called Fds.IFAPI.APIAutopilotState [autopilot.getstate]",ERROR);
+        },interval);
+      },
+    "Fds.IFAPI.IFAPIStatus": function(interval) {
+      IFC.activeIntervals["Fds.IFAPI.IFAPIStatus"] = setInterval(
+        () => {
+          IFC.sendCommand({
+            "Command": "infiniteflight.getstatus",
+            "Parameters": []
+          });
+          IFC.log("Interval called Fds.IFAPI.IFAPIStatus [infiniteflight.getstatus]",ERROR);
+        },interval);
+      },
+    "Fds.IFAPI.APINearestAirportsResponse": function(interval) {
+      IFC.activeIntervals["Fds.IFAPI.APINearestAirportsResponse"] = setInterval(
+        () => {
+          IFC.sendCommand({
+            "Command": "infiniteflight.getnearestairports",
+            "Parameters": []
+          });
+          IFC.log("Interval called Fds.IFAPI.APINearestAirportsResponse [infiniteflight.getnearestairports]",ERROR);
+        },interval);
+      },
+    "Fds.IFAPI.APIFlightPlan": function(interval) {
+      IFC.activeIntervals["Fds.IFAPI.APIFlightPlan"] = setInterval(
+        () => {
+          IFC.sendCommand({
+            "Command": "flightplan.get",
+            "Parameters": []
+          });
+          IFC.log("Interval called Fds.IFAPI.APIFlightPlan [flightplan.get]",ERROR);
+        },interval);
+      }
   },
 
-  pollTimeouts: { // Timeouts for polling for each info type
+  pollingIntervals: { // Interval values for polling for each info type
     "Fds.IFAPI.APIAircraftState": 0,
     "Fds.IFAPI.APIEngineStates": 0,
     "Fds.IFAPI.APIFuelTankStates": 0,
@@ -76,6 +162,9 @@ var IFC = {
     "Fds.IFAPI.IFAPIStatus": 0,
     "Fds.IFAPI.APINearestAirportsResponse": 0,
     "Fds.IFAPI.APIFlightPlan": 0
+  },
+
+  activeIntervals: { // Active intervals for polling for each info type
   },
 
   foreFlight: { // ForFlight data
@@ -110,46 +199,58 @@ var IFC = {
   initSocketOnHostDiscovered: true,
   closeUDPSocketOnHostDiscovered: true,
 
-  log: function(msg) { if (IFC.enableLog) console.log(IFC.name, msg); }, // generic logging function
-
-  beforeInitSocket: function() { IFC.log("Connecting..."); }, // What to do before connecting to sockit
-
-  onHostUndefined: function() { IFC.log("Host Undefined"); }, // What to do if host is undefined
-
-  onHostSearchStarted: function() { IFC.log("Searching for host"); }, // What to do when starting search for host
-
-  onSocketConnected: function() { // What to do when connected
-    IFC.log("Connected");
+  log: function(msg,level) { // generic logging function
+    if (IFC.enableLog) {
+      if (level <= IFC.logLevel) { console.log (IFC.name, msg); }
+    }
   },
 
-  onSocketConnectionError: function() { IFC.log("Connection error"); }, // What to do on a connection error
+  beforeInitSocket: function() { IFC.log("Connecting...", INFO); }, // What to do before connecting to sockit
 
-  onHostDiscovered: function(host, port, callback) { IFC.log("Host Discovered"); }, // What to do when host discovered
+  onHostUndefined: function() { IFC.log("Host Undefined", INFO); }, // What to do if host is undefined
 
-  onDataReceived: function(data) { // What to do when receiving data back from API
-    if (data.Type) { // Store structured data results in ifData objects
-      IFC.log("Storing " + data.Type);
-      IFC.ifData[data.Type] = data;
-    }
-    IFC.eventEmitter.emit('IFCdata',data); // Return data to calling script through an event
-    if (IFC.pollTimeouts[data.Type] > 0) {  // Set timeout to refetch dataif timeout has been defined
-      setTimeout(
-        () => IFC.sendCommand({
-          "Command": IFC.ifDataCommands[data.Type],
-          "Parameters": []
-        }),
-        IFC.pollTimeouts[data.Type]
-      );
+  onHostSearchStarted: function() { IFC.log("Searching for host", INFO); }, // What to do when starting search for host
+
+  onSocketConnected: function() { // What to do when connected
+    IFC.log("Connected", error);
+  },
+
+  onSocketConnectionError: function() { IFC.log("Connection error", ERROR); }, // What to do on a connection error
+
+  onHostDiscovered: function(host, port, callback) { IFC.log("Host Discovered", INFO); }, // What to do when host discovered
+
+  onDataReceived: function(dataString) { // What to do when receiving data back from API
+    if (dataString.match("{")) {
+      var results = IFC._dataParse(dataString);
+      for (i in results) {
+        var data = results[i];
+        if (data.Type) { // Store structured data results in ifData objects
+          IFC.log("Storing " + data.Type, ERROR);
+          IFC.log("Data: " + JSON.stringify(data), INFO)
+          IFC.ifData[data.Type] = data;
+        }
+        IFC.eventEmitter.emit('IFCdata',data); // Return data to calling script through an event
+/*        if (IFC.pollingIntervals[data.Type] > 0) {  // Set timeout to refetch dataif timeout has been defined
+          setTimeout(
+            () => IFC.sendCommand({
+              "Command": IFC.intervalCommandss[data.Type],
+              "Parameters": []
+            }),
+            IFC.pollingIntervals[data.Type]
+          )
+          IFC.log("Started timeout for " + data.Type + ": "+ IFC.intervalCommandss[data.Type] + "," + IFC.pollingIntervals[data.Type], ERROR);
+        }*/
+      }
     }
   },
 
   onHostSearchFailed: function() {}, // What to do if search failed
 
   // SHORTCUTS FUNCTIONS //
-  init: function(successCallback, errorCallback, timeouts) { // Initialise module
+  init: function(successCallback, errorCallback, intervals) { // Initialise module
     if (successCallback) IFC.onSocketConnected = successCallback; // Set success callback function
     if (errorCallback) IFC.onSocketConnectionError = errorCallback; // Set error callback function
-    if (timeouts) IFC.setPollTimeouts(timeouts); // Set poll timeouts
+    if (intervals) IFC.setPollingIntervals(intervals); // Set poll timeouts
     IFC.searchHost(successCallback, errorCallback); // Search for Infinite Flight host
   },
 
@@ -158,7 +259,7 @@ var IFC = {
   },
 
   // FORE FLIGHT //
-  onForeFlightDataReceived: function(data) { IFC.log(data); }, // Handle ForeFlight data return
+  onForeFlightDataReceived: function(data) { IFC.log(data, INFO); }, // Handle ForeFlight data return
 
   initForeFlightReceiver: function(onForeFlightDataReceived) { // ForeFlight data receiver
 
@@ -176,7 +277,7 @@ var IFC = {
       var dataType = dataParts.shift();
       var dataModel = IFC.foreFlight.dataModels[dataType];
 
-      if (!dataModel) return IFC.log("No format found for ", dataType);
+      if (!dataModel) return IFC.log("No format found for " + dataType, ERROR);
       var name = dataModel.name;
       var fields = dataModel.fields;
 
@@ -193,7 +294,7 @@ var IFC = {
 
     IFC.foreFlight.socket.on('listening', function() { // Creatting Foreflight socket for listening
       var address = IFC.foreFlight.socket.address();
-      IFC.log("listening on :", address.address, ":" , address.port);
+      IFC.log("listening on :" + address.address + ":" + address.port, INFO);
     });
 
     IFC.foreFlight.socket.bind(IFC.foreFlight.broadcastPort);
@@ -204,20 +305,19 @@ var IFC = {
 
     IFC.infiniteFlight.discoverSocket = dgram.createSocket('udp4');
     IFC.infiniteFlight.discoverSocket.on('message', function (info){
-      IFC.log("Discover socket : data received");
+      IFC.log("Discover socket : data received", INFO);
       var dataStr = info;
-      IFC.log(dataStr);
+      IFC.log(dataStr, INFO);
       var data = {};
       try {
         data = JSON.parse(IFC._ab2str(dataStr));
-        IFC.log()
-        IFC.log(data);
+        IFC.log(data, INFO);
       } catch(e) {
-        IFC.log("Discover socket : parsing error");
+        IFC.log("Discover socket : parsing error", INFO);
       }
 
       if (data.Addresses && data.Port) {
-        IFC.log("Host Discovered");
+        IFC.log("Host Discovered", INFO);
 //        IFC.isConnected = true;
         IFC.infiniteFlight.serverAddress = data.Addresses[0];
         IFC.infiniteFlight.serverAddress = "";
@@ -240,7 +340,7 @@ var IFC = {
 
     IFC.infiniteFlight.discoverSocket.on('listening', function(){
       var address = IFC.infiniteFlight.discoverSocket.address();
-      IFC.log("IF discoverer listening on :" + address.address + ":" + address.port);
+      IFC.log("IF discoverer listening on :" + address.address + ":" + address.port, INFO);
     });
 
     IFC.infiniteFlight.discoverSocket.bind(IFC.infiniteFlight.broadcastPort);
@@ -248,7 +348,7 @@ var IFC = {
   },
 
   initIFClient: function(host, port) { // Initiaise the module
-    IFC.log('initializing socket');
+    IFC.log('initializing socket', INFO);
 
     if (IFC.infiniteFlight.clientSocket) IFC.infiniteFlight.clientSocket.close();
 
@@ -257,18 +357,18 @@ var IFC = {
 
     IFC.infiniteFlight.clientSocket = new net.Socket();
     IFC.infiniteFlight.clientSocket.connect(port, host, function() {
-    	IFC.log('Connected to IF server');
+    	IFC.log('Connected to IF server', ERROR);
       IFC.isConnected = true;
-      IFC.startPollTimeouts();
+      IFC.startPollingIntervals();
       IFC.onSocketConnected();
     });
 
     IFC.infiniteFlight.clientSocket.on('data', function(data) {
-    	IFC.log('Received: ' + data);
+    	IFC.log('Received: ' + data, INFO);
       try {
-        IFC.onDataReceived(JSON.parse(IFC._ab2str(data)));
+        IFC.onDataReceived(IFC._ab2str(data));
       } catch(e) {
-        IFC.log(e);
+        IFC.log(e, ERROR);
       }
     });
 
@@ -292,6 +392,8 @@ var IFC = {
 
   sendCommand: function(cmd) { // Send a command to IF API
 
+    IFC.log("Sending command " + JSON.stringify(cmd), ERROR);
+
     try {
       var jsonStr = JSON.stringify(cmd);
       var data = new Uint8Array(jsonStr.length + 4);
@@ -305,31 +407,53 @@ var IFC = {
       IFC.infiniteFlight.clientSocket.write(buffer);
 
       IFC.eventEmitter.emit('IFCCommandSent',cmd); // Return data to calling script through an event
-      IFC.log("Emitting IFCCommandSent for " + cmd);
+      IFC.log("Emitting IFCCommandSent for " + cmd, INFO);
 
     } catch(e) {
       IFC.log(e);
       IFC.eventEmitter.emit('IFCCommandError',cmd); // Return data to calling script through an event
-      IFC.log("Emitting IFCommandError for " + cmd);
+      IFC.log("Emitting IFCommandError for " + cmd, INFO);
     }
   },
 
-  setPollTimeouts: function(timeouts) { // Set poll timeouts
-    for (key in timeouts) {
-      IFC.pollTimeouts[key] = timeouts[key];
-      IFC.log("Setting timeout for " + key + ": " + timeouts[key]);
+  setPollingIntervals: function(intervals) { // Set poll timeouts
+    for (key in intervals) {
+      IFC.pollingIntervals[key] = intervals[key];
+      IFC.log("Setting interval for " + key + ": " + intervals[key], ERROR);
     }
-    if (IFC.isConnected) { IFC.startPollTimeouts; }
+//    if (IFC.isConnected) { IFC.startPollingIntervals; }
   },
 
-  startPollTimeouts: function() { // Start polling
-    for (key in IFC.pollTimeouts) {
-      if (IFC.pollTimeouts[key] > 0) {
-        IFC.log("Starting polling for " + key)
-        IFC.sendCommand({
-          "Command": IFC.ifDataCommands[key],
-          "Parameters": []
-        });
+  resetPollingIntervals: function(intervals) { // Reset poll intervals and retart them
+    IFC.setPollingIntervals(intervals);
+    IFC.startPollingIntervals(intervals);
+  },
+
+  startPollingIntervals: function() { // Start polling
+    if (IFC.isConnected) {
+      for (var key in IFC.pollingIntervals) {
+//        if (IFC.activeIntervals[key]) {
+          IFC.log("Clear polling for " + key,ERROR);
+          clearInterval(IFC.activeIntervals[key]);
+//        }
+        if (IFC.pollingIntervals[key] > 0) {
+          IFC.log("Starting polling for " + key, ERROR);
+          IFC.intervalCommands[key](IFC.pollingIntervals[key]);
+/*          IFC.activeIntervals[key] = setInterval(
+            () => {
+              IFC.sendCommand({
+                "Command": eval("IFC.intervalCommandss[key]"),
+                "Parameters": []
+              });
+              IFC.log("Interval called " + eval("key"),ERROR);
+            },
+            IFC.pollingIntervals[key]
+          );*/
+/*          IFC.sendCommand({
+            "Command": IFC.intervalCommandss[key],
+            "Parameters": []
+          });*/
+        }
       }
     }
   },
@@ -348,11 +472,18 @@ var IFC = {
   // ArrayBuffer to String
   _ab2str: function(buf) {
     var dataString = String.fromCharCode.apply(null, new Uint8Array(buf));
-    var regex = /{[\S\s]*}$/g;
-    var jsonStart = dataString.search(regex);
-    var resultString = dataString.slice(jsonStart,dataString.length);
-    return resultString;
+    return dataString;
   },
+
+  _dataParse: function(dataString) {
+    //    var regex = /^[^{]*({[\S\s]*})[^}]*$/g;
+      var regex = /}[^{^}]+{/g;
+      var dataString = dataString.replace(regex, "},{")
+      regex = /^[^{]*({[\S\s]*})[^}]*$/;
+      dataString = dataString.replace(regex, "$1");
+      var resultString = "[" + dataString + "]"
+      return JSON.parse(resultString);
+  }
 
 };
 

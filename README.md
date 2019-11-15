@@ -22,7 +22,7 @@ Infinite Flight Connect is an built-in API that allows you to send command to In
 
 * `successCallback` is the function to be executed after the connection has been established with Infinite Flight
 * `errorCallback` is the function to be executed in case of error connecting
-* `timeouts` is an object containing a list of polling intervals for information functions (see the section on "Polling")
+* `intervals` is an object containing a list of polling intervals for information functions (see the section on "Polling")
 
 Example :
 
@@ -112,7 +112,7 @@ Some applications will need o regularly call information functions in the API at
 
 For instance, an application which needs to display the fuel level in tanks may need to fetch the results of `Airplane.GetFuelState` every second.
 
-You can define polling intervals for any of the information types at the time you call the `IFC.init()` function by passing the optional `timeouts` parameter.
+You can define polling intervals in milliseconds for any of the information types at the time you call the `IFC.init()` function by passing the optional `intervals` parameter.
 
 In the example below, two intervals are set:
 
@@ -135,12 +135,12 @@ IFC.init(
 )
 ```
 
-At any point you can change the polling intervals for any information type by calling `IFC.setPollTimeouts` and passing a similar `timeouts` object as a parameter. You can cancel a polling interval by setting the interval to zero (0) milliseconds.
+At any point you can change the polling intervals for any information type by calling `IFC.resetPollingIntervals` and passing a similar `intervals` object as a parameter. You can cancel a polling interval by setting the interval to zero (0) milliseconds.
 
-For instance, to cancel the interval for `Fds.IFAPI.APIFuelTankStates` and set the interval for `Fds.IFAPI.APIAircraftState` to three seconds you would call `setPollTimeouts` as follows:
+For instance, to cancel the interval for `Fds.IFAPI.APIFuelTankStates` and set the interval for `Fds.IFAPI.APIAircraftState` to three seconds you would call `resetPollingIntervals` as follows:
 
 ```
-IFC.setPollTimeouts({
+IFC.resetPollingIntervals({
   "Fds.IFAPI.APIAircraftState": 3000,
   "Fds.IFAPI.APIFuelTankStates": 0  
 });

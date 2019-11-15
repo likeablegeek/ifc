@@ -67,6 +67,9 @@ The Infinite API has a series of information-fetching functions which return str
 * `Infiniteflight.GetStatus` : Returns the status of the Infinite Flight application.
 * `Infinitefight.GetNearestAirports`: Returns a list of the nearest airports.
 * `Flightplan.Get`: Returns flight plan information.
+* `Live.GetTraffic`: Returns live traffic.
+* `Live.AtcFacilities`: Returns a list of ATC facilities.
+* `Live.GetCurrentComFrequencies`: Return current communication frequencies.
 
 Each of these functions is associated with a data type name which is used by the `ifc` module for retrieving the results of calls to these functions as well as setting regular polling intervals for any of these types of information:
 
@@ -79,6 +82,9 @@ Each of these functions is associated with a data type name which is used by the
 * `Infiniteflight.GetStatus` : `Fds.IFAPI.IFAPIStatus`
 * `Infinitefight.GetNearestAirports`: `Fds.IFAPI.APINearestAirportsResponse`
 * `Flightplan.Get`: `Fds.IFAPI.APIFlightPlan`
+* `Live.GetTraffic`: `Fds.IFAPI.LiveAirplaneList`
+* `Live.AtcFacilities`: `Fds.IFAPI.FacilityList`
+* `Live.GetCurrentComFrequencies`: `Fds.IFAPI.APIFrequencyInfoList`
 
 Every time one of these functions is called and the API returns data, the data is stored in the `IFData` object in the `ifc` module so the calling script can retrieve it.
 

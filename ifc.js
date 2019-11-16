@@ -203,28 +203,6 @@ var IFC = {
   activeIntervals: { // Active intervals for polling for each info type
   },
 
-  foreFlight: { // ForFlight data
-    socket: false,
-    broadcastPort: 49002,
-    dataModels: {
-      // GPS
-      "XGPSInfinite Flight": {
-        "name": "GPS",
-        "fields": ["lat", "lng", "alt", "hdg", "gs"]
-      },
-      // Attitude
-      "XATTInfinite Flight": {
-        "name": "attitude",
-        "fields": ["hdg", "pitch", "roll"]
-      },
-      // Traffic
-      "XTRAFFICInfinite Flight": {
-        "name": "traffic",
-        "fields": ["icao", "lat", "lng", "alt", "vs", "gnd", "hdg", "spd", "callsign"]
-      }
-    }
-  },
-
   infiniteFlight: { // Infinite Flight connection data
     broadcastPort: 15000, // Port to listen for broadcast from Infinite Flight
     serverPort: 0, // Port for socket connection to Infinite Flight
@@ -288,52 +266,6 @@ var IFC = {
     if (errorCallback) IFC.onSocketConnectionError = errorCallback; // Set error callback function
     if (intervals) IFC.setPollingIntervals(intervals); // Set poll timeouts
     IFC.searchHost(successCallback, errorCallback); // Search for Infinite Flight host
-  },
-
-  initForeFlight: function(onForeFlightDataReceived) { // Initialise ForeFlight
-    IFC.initForeFlightReceiver(onForeFlightDataReceived);
-  },
-
-  // FORE FLIGHT //
-  onForeFlightDataReceived: function(data) { IFC.log(data, INFO); }, // Handle ForeFlight data return
-
-  initForeFlightReceiver: function(onForeFlightDataReceived) { // ForeFlight data receiver
-
-    if (onForeFlightDataReceived) IFC.onForeFlightDataReceived = onForeFlightDataReceived;
-    if (IFC.foreFlight.socket) IFC.foreFlight.socket.close(function() {
-      IFC.foreFlight.socket = false;
-    });
-
-    IFC.foreFlight.socket = dgram.createSocket('udp4');
-    IFC.foreFlight.socket.on('message', function (msg, info){
-
-      msg = IFC._ab2str(msg);
-      var data = {};
-      var dataParts = msg.split(",");
-      var dataType = dataParts.shift();
-      var dataModel = IFC.foreFlight.dataModels[dataType];
-
-      if (!dataModel) return IFC.log("No format found for " + dataType, ERROR);
-      var name = dataModel.name;
-      var fields = dataModel.fields;
-
-      var log = [name];
-      data._name = name;
-      for (var i = 0; i < fields.length; i++) {
-        log.push(fields[i] + ' : ' + dataParts[i]);
-        data[fields[i]] = dataParts[i];
-        IFC.onForeFlightDataReceived(data);
-      }
-
-      //IFC.log(log.join(' '));
-    });
-
-    IFC.foreFlight.socket.on('listening', function() { // Creatting Foreflight socket for listening
-      var address = IFC.foreFlight.socket.address();
-      IFC.log("listening on :" + address.address + ":" + address.port, INFO);
-    });
-
-    IFC.foreFlight.socket.bind(IFC.foreFlight.broadcastPort);
   },
 
   searchHost: function(successCallback, errorCallback) { // Search for an Infinite Flight host

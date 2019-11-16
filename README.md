@@ -153,19 +153,6 @@ IFC.resetPollingIntervals({
 ```
 
 
-## Connection to ForeFlight Link API
-
-Fore Flight Link broadcasts various data about the player's plane and traffic planes around him. ForeFlight Link must be enabled from Infinite Flight Settings > General > Enable ForeFlight Link
-
-You can use `ifc` to listen to ForeFlight Link messages :
-
-`initForeFlight(onForeFlightDataReceived)`
-
-(TODO: example to come ...)
-
-Received Data is formatted according to the official documentation : https://www.foreflight.com/support/network-gps/
-
-
 ## Copyright and License
 
 This version of `ifc` is a fork and derivative version of two previous versions:

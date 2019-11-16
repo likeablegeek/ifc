@@ -29,17 +29,22 @@ var dgram = require('dgram'); // For listening for UDP broadcasts
 var net = require('net'); // For establishing socket connections
 var events = require('events'); // For emitting events back to calling scripts
 
-const INFO = 2;
+const INFO = 2; // Constants for referencing error levels in logging calls
 const WARN = 1;
 const ERROR = 0;
 
 var IFC = {
 
-  host: null, // Client host address
-  port: null, // Client host port
+  infiniteFlight: { // Infinite Flight connection data
+    broadcastPort: 15000, // Port to listen for broadcast from Infinite Flight
+    serverPort: 0, // Port for socket connection to Infinite Flight
+    serverAddress: null,
+    discoverSocket: false,
+    clientSocket: false
+  },
 
-  enableLog: true, // Control logging
-  logLevel: ERROR,
+  enableLog: false, // Control logging -- default is false
+  logLevel: ERROR, // Logging message level -- default is ERROR
 
   name: "IF Connect", // Module name
 
@@ -203,13 +208,6 @@ var IFC = {
   activeIntervals: { // Active intervals for polling for each info type
   },
 
-  infiniteFlight: { // Infinite Flight connection data
-    broadcastPort: 15000, // Port to listen for broadcast from Infinite Flight
-    serverPort: 0, // Port for socket connection to Infinite Flight
-    discoverSocket: false,
-    clientSocket: false
-  },
-
   initSocketOnHostDiscovered: true,
   closeUDPSocketOnHostDiscovered: true,
 
@@ -244,16 +242,6 @@ var IFC = {
           IFC.ifData[data.Type] = data;
         }
         IFC.eventEmitter.emit('IFCdata',data); // Return data to calling script through an event
-/*        if (IFC.pollingIntervals[data.Type] > 0) {  // Set timeout to refetch dataif timeout has been defined
-          setTimeout(
-            () => IFC.sendCommand({
-              "Command": IFC.intervalCommandss[data.Type],
-              "Parameters": []
-            }),
-            IFC.pollingIntervals[data.Type]
-          )
-          IFC.log("Started timeout for " + data.Type + ": "+ IFC.intervalCommandss[data.Type] + "," + IFC.pollingIntervals[data.Type], ERROR);
-        }*/
       }
     }
   },
@@ -261,11 +249,19 @@ var IFC = {
   onHostSearchFailed: function() {}, // What to do if search failed
 
   // SHORTCUTS FUNCTIONS //
-  init: function(successCallback, errorCallback, intervals) { // Initialise module
+  init: function(successCallback, errorCallback, params) { // Initialise module
     if (successCallback) IFC.onSocketConnected = successCallback; // Set success callback function
     if (errorCallback) IFC.onSocketConnectionError = errorCallback; // Set error callback function
-    if (intervals) IFC.setPollingIntervals(intervals); // Set poll timeouts
-    IFC.searchHost(successCallback, errorCallback); // Search for Infinite Flight host
+    if (params.intervals) IFC.setPollingIntervals(params.intervals); // Set poll timeouts
+    if (params.enableLog) IFC.enableLog = params.enableLog; // Set Logging on/off
+    if (params.loggingLevel) IFC.loggingLevel = params.loggingLevel; // Set logging message level
+    if (params.host && params.port) { // Host provided so connect directly to it
+      IFC.infiniteFlight.serverAddress = params.host;
+      IFC.infiniteFlight.serverPort = params.port;
+      IFC.initIFClient(IFC.infiniteFlight.serverAddress, IFC.infiniteFlight.serverPort);
+    } else { // No host provided so search for a host via UDP
+      IFC.searchHost(successCallback, errorCallback); // Search for Infinite Flight host
+    }
   },
 
   searchHost: function(successCallback, errorCallback) { // Search for an Infinite Flight host
@@ -287,7 +283,7 @@ var IFC = {
       if (data.Addresses && data.Port) {
         IFC.log("Host Discovered", INFO);
 //        IFC.isConnected = true;
-        IFC.infiniteFlight.serverAddress = data.Addresses[0];
+//        IFC.infiniteFlight.serverAddress = data.Addresses[0];
         IFC.infiniteFlight.serverAddress = "";
   			for (var i = 0; i < data.Addresses.length; i++) { // Find an IP v4 address
   					if (isIp.v4(data.Addresses[i])) {

@@ -23,11 +23,11 @@ Infinite Flight Connect is an built-in API that allows you to send command to In
 * `successCallback` is the function to be executed after the connection has been established with Infinite Flight
 * `errorCallback` is the function to be executed in case of error connecting
 * `params` is an optional parameter which allows you to configure and control various aspects of the module, including:
-** `intervals` is an object containing a list of polling intervals for information functions (see the section on "Polling")
-** `enableLog` is a boolean value to enable/disable logging in the Module; default is `false`
-** `loggingLevel` is an integer value for logging level in the module (2: INFO, 1: WARN, 0: ERROR); default is 0 (ERROR)
-** `host` is the IP address of a device running Infinite Flight to which you want to connect without polling for UDP broadcasts from Infinite Flight; if not set the module will wait for a UDP broadcast to determine which device to connect to
-** `port` is the port to use when manually connecting to a device running Infinite Flight without polling for UDP broadcasts from Infinite Flight; if not set the module will wait for a UDP broadcast to determine which device to connect to
+  * `intervals` is an object containing a list of polling intervals for information functions (see the section on "Polling")
+  * `enableLog` is a boolean value to enable/disable logging in the Module; default is `false`
+  * `loggingLevel` is an integer value for logging level in the module (2: INFO, 1: WARN, 0: ERROR); default is 0 (ERROR)
+  * `host` is the IP address of a device running Infinite Flight to which you want to connect without polling for UDP broadcasts from Infinite Flight; if not set the module will wait for a UDP broadcast to determine which device to connect to
+  * `port` is the port to use when manually connecting to a device running Infinite Flight without polling for UDP broadcasts from Infinite Flight; if not set the module will wait for a UDP broadcast to determine which device to connect to
 
 Example :
 

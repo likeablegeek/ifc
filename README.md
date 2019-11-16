@@ -101,8 +101,6 @@ Every time one of these functions is called and the API returns data, the data i
 
 For instance, if you have called `Airplane.GetState` and data has been returned, it can be retrieved via `IFC.ifData["Fds.IFAPI.APIAircraftState"]`.
 
-(TODO: Add "Live" information functions once tested)
-
 
 ### Events
 

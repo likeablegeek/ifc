@@ -29,9 +29,10 @@ var dgram = require('dgram'); // For listening for UDP broadcasts
 var net = require('net'); // For establishing socket connections
 var events = require('events'); // For emitting events back to calling scripts
 
-const INFO = 2; // Constants for referencing error levels in logging calls
-const WARN = 1;
-const ERROR = 0;
+const INFO = 3; // Constants for referencing error levels in logging calls
+const WARN = 2;
+const ERROR = 1;
+const MANDATORY = 0;
 
 var IFC = {
 
@@ -44,7 +45,7 @@ var IFC = {
   },
 
   enableLog: false, // Control logging -- default is false
-  logLevel: ERROR, // Logging message level -- default is ERROR
+  logLevel: MANDATORY, // Logging message level -- default is MANDATORY
 
   name: "IF Connect", // Module name
 
@@ -224,10 +225,10 @@ var IFC = {
   onHostSearchStarted: function() { IFC.log("Searching for host", INFO); }, // What to do when starting search for host
 
   onSocketConnected: function() { // What to do when connected
-    IFC.log("Connected", error);
+    IFC.log("Connected", MANDATORY);
   },
 
-  onSocketConnectionError: function() { IFC.log("Connection error", ERROR); }, // What to do on a connection error
+  onSocketConnectionError: function() { IFC.log("Connection error", MANDATORY); }, // What to do on a connection error
 
   onHostDiscovered: function(host, port, callback) { IFC.log("Host Discovered", INFO); }, // What to do when host discovered
 
@@ -321,7 +322,7 @@ var IFC = {
 
     IFC.infiniteFlight.clientSocket = new net.Socket();
     IFC.infiniteFlight.clientSocket.connect(port, host, function() {
-    	IFC.log('Connected to IF server ' + host, ERROR);
+    	IFC.log('Connected to IF server ' + host, MANDATORY);
       IFC.isConnected = true;
       IFC.startPollingIntervals();
       IFC.onSocketConnected();
@@ -332,7 +333,7 @@ var IFC = {
       try {
         IFC.onDataReceived(IFC._ab2str(data));
       } catch(e) {
-        IFC.log(e, ERROR);
+        IFC.log(e, MANDATORY);
       }
     });
 
@@ -383,7 +384,7 @@ var IFC = {
   setPollingIntervals: function(intervals) { // Set poll timeouts
     for (key in intervals) {
       IFC.pollingIntervals[key] = intervals[key];
-      IFC.log("Setting interval for " + key + ": " + intervals[key], ERROR);
+      IFC.log("Setting interval for " + key + ": " + intervals[key], MANDATORY);
     }
 //    if (IFC.isConnected) { IFC.startPollingIntervals; }
   },
@@ -397,11 +398,11 @@ var IFC = {
     if (IFC.isConnected) {
       for (var key in IFC.pollingIntervals) {
 //        if (IFC.activeIntervals[key]) {
-          IFC.log("Clear polling for " + key,ERROR);
+          IFC.log("Clear polling for " + key,MANDATORY);
           clearInterval(IFC.activeIntervals[key]);
 //        }
         if (IFC.pollingIntervals[key] > 0) {
-          IFC.log("Starting polling for " + key, ERROR);
+          IFC.log("Starting polling for " + key, MANDATORY);
           IFC.intervalCommands[key](IFC.pollingIntervals[key]);
 /*          IFC.activeIntervals[key] = setInterval(
             () => {
